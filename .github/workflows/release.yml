@@ -15,8 +15,8 @@ jobs:
 
       - name: Create release ZIP
         run: |
-          cd custom_components
-          zip -r ../eagent_dienlucvn.zip eagent_dienlucvn/
+          cd custom_components/eagent_dienlucvn
+          zip -r ../../eagent_dienlucvn.zip .
 
       - name: Create GitHub Release with ZIP
         uses: softprops/action-gh-release@v2
