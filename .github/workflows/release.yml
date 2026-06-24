@@ -1,0 +1,21 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create release ZIP
+        run: |
+          cd custom_components
+          zip -r ../eagent_dienlucvn.zip eagent_dienlucvn/
+
+      - name: Attach ZIP to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: eagent_dienlucvn.zip
