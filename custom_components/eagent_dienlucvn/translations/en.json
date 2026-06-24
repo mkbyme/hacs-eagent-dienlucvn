@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect EVN eAgent account",
+        "description": "Enter your eAgent (eagent.vn) login credentials and electricity customer code.",
+        "data": {
+          "username": "Username (phone number)",
+          "password": "Password",
+          "customer_code": "Customer code",
+          "scan_interval": "Data update interval (hours)"
+        },
+        "data_description": {
+          "scan_interval": "How often to fetch new data from the EVN API (1–24 hours). Default is 3 hours."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to EVN server. Please try again.",
+      "invalid_auth": "Invalid username or password.",
+      "unknown": "Unknown error. Please try again.",
+      "invalid_customer_code": "Customer code not found in this account. Check the code on your electricity bill."
+    },
+    "abort": {
+      "already_configured": "This customer code is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Update options",
+        "data": {
+          "scan_interval": "Data update interval (hours)"
+        },
+        "data_description": {
+          "scan_interval": "How often to fetch new data from the EVN API (1–24 hours)."
+        }
+      }
+    }
+  }
+}

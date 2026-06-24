@@ -1,0 +1,12 @@
+{
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "",
+  "domain": "eagent_dienlucvn",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "",
+  "name": "eAgent Điện lực Việt Nam",
+  "requirements": ["python_dateutil"],
+  "version": "1.0.0"
+}

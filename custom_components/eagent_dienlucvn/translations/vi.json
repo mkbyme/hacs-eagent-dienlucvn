@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kết nối tài khoản EVN eAgent",
+        "description": "Nhập thông tin đăng nhập tài khoản eAgent (eagent.vn) và mã khách hàng điện.",
+        "data": {
+          "username": "Tài khoản (số điện thoại)",
+          "password": "Mật khẩu",
+          "customer_code": "Mã khách hàng",
+          "scan_interval": "Chu kỳ cập nhật dữ liệu (giờ)"
+        },
+        "data_description": {
+          "scan_interval": "Tần suất lấy dữ liệu mới từ API EVN (1–24 giờ). Mặc định là 3 giờ."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Không thể kết nối đến máy chủ EVN. Vui lòng thử lại.",
+      "invalid_auth": "Tài khoản hoặc mật khẩu không đúng.",
+      "unknown": "Lỗi không xác định. Vui lòng thử lại.",
+      "invalid_customer_code": "Mã khách hàng không tìm thấy trong tài khoản này. Kiểm tra lại mã khách hàng trên hóa đơn điện."
+    },
+    "abort": {
+      "already_configured": "Mã khách hàng này đã được thiết lập."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Cập nhật cài đặt",
+        "data": {
+          "scan_interval": "Chu kỳ cập nhật dữ liệu (giờ)"
+        },
+        "data_description": {
+          "scan_interval": "Tần suất lấy dữ liệu mới từ API EVN (1–24 giờ)."
+        }
+      }
+    }
+  }
+}
