@@ -399,16 +399,16 @@ def _format_result(
             ]
         },
         ID_BILL_HISTORY: {
-            "value": [_format_bill_attrs(b) for b in (bill_list or [])]
+            "value": [_format_bill_attrs(b, include_qr=False) for b in (bill_list or [])[:12]]
         },
     }
 
 
-def _format_bill_attrs(bill: dict | None) -> dict:
+def _format_bill_attrs(bill: dict | None, include_qr: bool = True) -> dict:
     """Extract meaningful fields from a bill object."""
     if not bill:
         return {}
-    return {
+    result = {
         "period": f"{bill.get('month', '')}/{bill.get('year', '')}",
         "issue_date": bill.get("issueDate", ""),
         "from_date": bill.get("fromDate", ""),
@@ -418,11 +418,12 @@ def _format_bill_attrs(bill: dict | None) -> dict:
         "consumption_kwh": int(bill.get("nume", 0) or 0),
         "amount_before_tax": int(bill.get("amountNotTax", 0) or 0),
         "tax": int(bill.get("amountTax", 0) or 0),
-        "bill_type": bill.get("typeName", ""),
         "order_code": bill.get("orderInfoCode", ""),
         "bank": bill.get("bankCode", ""),
-        "qr_code": bill.get("qrCodeContent", ""),
     }
+    if include_qr:
+        result["qr_code"] = bill.get("qrCodeContent", "")
+    return result
 
 
 def _calc_ecost(kwh: float) -> str:
