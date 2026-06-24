@@ -1,8 +1,6 @@
 {
   "name": "eAgent Điện lực Việt Nam",
   "category": "integration",
-  "render_readme": true,
-  "zip_release": true,
-  "filename": "eagent_dienlucvn.zip",
-  "content_in_root": true
+  "homeassistant": "2025.10.3",
+  "render_readme": true
 }

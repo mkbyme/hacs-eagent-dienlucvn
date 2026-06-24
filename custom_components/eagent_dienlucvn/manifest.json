@@ -4,11 +4,11 @@
   ],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "",
+  "documentation": "https://github.com/mkbyme/hacs-eagent-dienlucvn",
   "domain": "eagent_dienlucvn",
   "iot_class": "cloud_polling",
-  "issue_tracker": "",
+  "issue_tracker": "https://github.com/mkbyme/hacs-eagent-dienlucvn/issues",
   "name": "eAgent Điện lực Việt Nam",
   "requirements": ["python_dateutil"],
-  "version": "1.0.9"
+  "version": "1.0.10"
 }
