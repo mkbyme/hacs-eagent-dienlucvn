@@ -1,7 +1,7 @@
 {
   "name": "eAgent Điện lực Việt Nam",
   "category": "integration",
-  "domain": "eagent_dienlucvn",
   "render_readme": true,
-  "zip_release": false
+  "zip_release": true,
+  "filename": "eagent_dienlucvn.zip"
 }
