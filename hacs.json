@@ -3,5 +3,6 @@
   "category": "integration",
   "render_readme": true,
   "zip_release": true,
-  "filename": "eagent_dienlucvn.zip"
+  "filename": "eagent_dienlucvn.zip",
+  "content_in_root": false
 }
