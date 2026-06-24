@@ -1,0 +1,9 @@
+{
+  "name": "eAgent Điện lực Việt Nam",
+  "category": "integration",
+  "country": [
+    "VN"
+  ],
+  "render_readme": true,
+  "zip_release": false
+}

@@ -1,7 +1,0 @@
-{
-  "name": "eAgent Điện lực Việt Nam",
-  "category": "integration",
-  "country": ["VN"],
-  "homeassistant": "2022.7.0",
-  "icon": "https://raw.githubusercontent.com/mkbyme/hacs-eagent-dienlucvn/main/logo.jpeg"
-}

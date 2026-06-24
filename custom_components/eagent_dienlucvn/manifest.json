@@ -1,5 +1,7 @@
 {
-  "codeowners": [],
+  "codeowners": [
+    "@mkbyme"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "",
