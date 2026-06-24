@@ -10,5 +10,5 @@
   "issue_tracker": "",
   "name": "eAgent Điện lực Việt Nam",
   "requirements": ["python_dateutil"],
-  "version": "1.0.2"
+  "version": "1.0.4"
 }
