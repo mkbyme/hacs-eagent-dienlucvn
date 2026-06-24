@@ -1,0 +1,67 @@
+# Biểu đồ tiền điện theo tháng
+# Nguồn: sensor.CUSTOMER_CODE_bill_amount → attribute "history"
+# Thay CUSTOMER_CODE bằng mã khách hàng thực tế (chữ thường), ví dụ: a3146tl11
+#
+# Cài đặt: HACS → Frontend → apexcharts-card
+
+type: custom:apexcharts-card
+header:
+  show: true
+  title: Tiền điện theo tháng
+  show_states: true
+  colorize_states: true
+chart_type: bar
+apex_config:
+  chart:
+    height: 280
+    toolbar:
+      show: false
+  dataLabels:
+    enabled: true
+    formatter: |
+      EVAL:function(val) {
+        if (!val) return '';
+        return new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(val) + 'đ';
+      }
+    offsetY: -20
+    style:
+      fontSize: 11px
+  plotOptions:
+    bar:
+      borderRadius: 5
+      columnWidth: 60%
+      dataLabels:
+        position: top
+  xaxis:
+    labels:
+      rotate: -30
+      style:
+        fontSize: 12px
+  yaxis:
+    labels:
+      formatter: |
+        EVAL:function(val) {
+          return new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 0 }).format(val) + 'đ';
+        }
+  tooltip:
+    y:
+      formatter: |
+        EVAL:function(val) {
+          return new Intl.NumberFormat('vi-VN').format(val) + ' VNĐ';
+        }
+series:
+  - entity: sensor.CUSTOMER_CODE_bill_amount
+    name: Tiền hóa đơn (VNĐ)
+    color: '#e53935'
+    data_generator: |
+      const bills = entity.attributes.history || [];
+      return bills
+        .slice()
+        .reverse()
+        .map(b => {
+          const [m, y] = b.period.split('/');
+          return {
+            x: String(m).padStart(2, '0') + '/' + y,
+            y: b.amount_before_tax + b.tax
+          };
+        });

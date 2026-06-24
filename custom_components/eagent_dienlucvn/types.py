@@ -10,6 +10,7 @@ from homeassistant.const import UnitOfEnergy
 
 from .const import (
     ID_BILL_AMOUNT,
+    ID_BILL_HISTORY,
     ID_ECON_DAILY_NEW,
     ID_ECON_DAILY_OLD,
     ID_ECON_MONTHLY,
@@ -19,6 +20,7 @@ from .const import (
     ID_ECOST_DAILY_OLD,
     ID_ECOST_MONTHLY,
     ID_FROM_DATE,
+    ID_INDICATORS_HISTORY,
     ID_LATEST_UPDATE,
     ID_PAYMENT_STATUS,
     ID_TO_DATE,
@@ -34,6 +36,7 @@ class EVNRequiredKeysMixin:
 class EVNSensorEntityDescription(SensorEntityDescription, EVNRequiredKeysMixin):
     dynamic_name: None | bool = False
     dynamic_icon: None | bool = False
+    history_key: str | None = None
 
 
 EVN_SENSORS: tuple[EVNSensorEntityDescription, ...] = (
@@ -98,6 +101,7 @@ EVN_SENSORS: tuple[EVNSensorEntityDescription, ...] = (
         state_class=SensorStateClass.TOTAL_INCREASING,
         device_class=SensorDeviceClass.ENERGY,
         value_fn=lambda data: data[ID_ECON_TOTAL_NEW],
+        history_key=ID_INDICATORS_HISTORY,
     ),
     EVNSensorEntityDescription(
         key=ID_ECON_TOTAL_OLD,
@@ -135,6 +139,7 @@ EVN_SENSORS: tuple[EVNSensorEntityDescription, ...] = (
         native_unit_of_measurement="VNĐ",
         value_fn=lambda data: data[ID_BILL_AMOUNT],
         dynamic_icon=True,
+        history_key=ID_BILL_HISTORY,
     ),
     EVNSensorEntityDescription(
         key=ID_LATEST_UPDATE,

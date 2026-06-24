@@ -20,6 +20,7 @@ from .const import (
     CONF_ERR_UNKNOWN,
     CONF_SUCCESS,
     ID_BILL_AMOUNT,
+    ID_BILL_HISTORY,
     ID_ECON_DAILY_NEW,
     ID_ECON_DAILY_OLD,
     ID_ECON_MONTHLY,
@@ -29,6 +30,7 @@ from .const import (
     ID_ECOST_DAILY_OLD,
     ID_ECOST_MONTHLY,
     ID_FROM_DATE,
+    ID_INDICATORS_HISTORY,
     ID_LATEST_UPDATE,
     ID_PAYMENT_STATUS,
     ID_TO_DATE,
@@ -36,6 +38,7 @@ from .const import (
     RESP_CODE_SUCCESS,
     STATUS_PAID,
     STATUS_UNPAID,
+    URL_BILL_LIST,
     URL_CUSTOMER_BILL,
     URL_INDICATORS,
     URL_LAST_BILL,
@@ -157,11 +160,14 @@ class EAgentAPI:
 
         last_bill = await self._get_last_bill(merchant_code, customer_code)
         customer_bill = await self._get_customer_bill(merchant_code, customer_code)
+        bill_list = await self._get_bill_list(merchant_code, customer_code)
 
         return _format_result(
             indicators["data"],
             last_bill.get("data"),
             customer_bill.get("data"),
+            bill_list.get("data", []),
+            bill_list.get("customer", {}),
         )
 
     async def _get_indicators(
@@ -231,6 +237,32 @@ class EAgentAPI:
         # Keep full response; responseCode indicates debt status
         return {"status": CONF_SUCCESS, "data": resp_json}
 
+    async def _get_bill_list(self, merchant_code: str, customer_code: str) -> dict:
+        try:
+            resp = await self._session.post(
+                url=URL_BILL_LIST,
+                json={"merchantCode": merchant_code, "customerCode": customer_code},
+                headers=self._auth_headers(),
+            )
+        except Exception as e:
+            _LOGGER.error("Get bill list error: %s", e)
+            return {"status": CONF_ERR_CANNOT_CONNECT, "data": []}
+
+        status, resp_json = await _process_response(resp)
+        if status != CONF_SUCCESS:
+            return {"status": status, "data": []}
+
+        if resp_json.get("responseCode") != RESP_CODE_SUCCESS:
+            _LOGGER.warning("Bill list API: %s", resp_json.get("responseMessage"))
+            return {"status": CONF_ERR_UNKNOWN, "data": []}
+
+        resp_data = resp_json.get("responseData", {})
+        return {
+            "status": CONF_SUCCESS,
+            "data": resp_data.get("electricBillList", []),
+            "customer": resp_data.get("electricCustomer", {}),
+        }
+
 
 async def _process_response(resp) -> tuple:
     if resp.status == 401:
@@ -254,6 +286,8 @@ def _format_result(
     indicators: list,
     last_bill: dict | None,
     customer_bill: dict | None,
+    bill_list: list | None = None,
+    electric_customer: dict | None = None,
 ) -> dict[str, Any]:
     """Build the sensor data dict from raw API responses."""
     if not indicators:
@@ -306,6 +340,8 @@ def _format_result(
     if customer_bill and customer_bill.get("responseCode") != RESP_CODE_NO_DEBT:
         payment_status = STATUS_UNPAID
 
+    cust = electric_customer or {}
+
     return {
         "status": CONF_SUCCESS,
         ID_ECON_DAILY_NEW: {"value": econ_daily_new, "info": _date_label(to_date)},
@@ -320,7 +356,11 @@ def _format_result(
         },
         ID_ECON_MONTHLY: {"value": econ_monthly},
         ID_ECOST_MONTHLY: {"value": _calc_ecost(econ_monthly)},
-        ID_ECON_TOTAL_NEW: {"value": econ_total_new, "info": to_date},
+        ID_ECON_TOTAL_NEW: {
+            "value": econ_total_new,
+            "info": to_date,
+            "meter_no": latest.get("meterNo", ""),
+        },
         ID_ECON_TOTAL_OLD: {"value": econ_total_old},
         ID_FROM_DATE: {"value": from_date_str},
         ID_TO_DATE: {"value": latest.get("readAt", "")},
@@ -331,6 +371,12 @@ def _format_result(
                 if payment_status == STATUS_UNPAID
                 else "mdi:comment-check-outline"
             ),
+            "customer_name": cust.get("name", ""),
+            "address": cust.get("address", ""),
+            "phone": cust.get("phone", ""),
+            "meter": cust.get("meter", ""),
+            "station": cust.get("stationName", ""),
+            "new_code": cust.get("newCode", ""),
         },
         ID_BILL_AMOUNT: {
             "value": str(bill_amount),
@@ -339,8 +385,43 @@ def _format_result(
                 if bill_amount > 0
                 else "mdi:checkbox-marked-circle-outline"
             ),
+            **_format_bill_attrs(last_bill),
         },
         ID_LATEST_UPDATE: {"value": time_obj.astimezone()},
+        ID_INDICATORS_HISTORY: {
+            "value": [
+                {
+                    "date": e.get("readAt", ""),
+                    "index": round(float(e.get("index", 0)), 2),
+                    "consumption": round(float(e.get("numeIndex", 0)), 2),
+                }
+                for e in indicators
+            ]
+        },
+        ID_BILL_HISTORY: {
+            "value": [_format_bill_attrs(b) for b in (bill_list or [])]
+        },
+    }
+
+
+def _format_bill_attrs(bill: dict | None) -> dict:
+    """Extract meaningful fields from a bill object."""
+    if not bill:
+        return {}
+    return {
+        "period": f"{bill.get('month', '')}/{bill.get('year', '')}",
+        "issue_date": bill.get("issueDate", ""),
+        "from_date": bill.get("fromDate", ""),
+        "to_date": bill.get("toDate", ""),
+        "old_index": int(bill.get("oldIndex", 0) or 0),
+        "new_index": int(bill.get("newIndex", 0) or 0),
+        "consumption_kwh": int(bill.get("nume", 0) or 0),
+        "amount_before_tax": int(bill.get("amountNotTax", 0) or 0),
+        "tax": int(bill.get("amountTax", 0) or 0),
+        "bill_type": bill.get("typeName", ""),
+        "order_code": bill.get("orderInfoCode", ""),
+        "bank": bill.get("bankCode", ""),
+        "qr_code": bill.get("qrCodeContent", ""),
     }
 
 

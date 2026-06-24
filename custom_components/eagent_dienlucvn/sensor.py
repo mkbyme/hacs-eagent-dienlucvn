@@ -160,6 +160,20 @@ class EVNSensor(CoordinatorEntity, SensorEntity):
         return data.get("value")
 
     @property
+    def extra_state_attributes(self) -> dict | None:
+        if self._device._data.get("status") != CONF_SUCCESS:
+            return None
+        data = self.entity_description.value_fn(self._device._data)
+        # export all keys except the reserved ones used by native_value/icon/name
+        attrs = {k: v for k, v in data.items() if k not in ("value", "info")}
+        # append list history if configured
+        history_key = self.entity_description.history_key
+        if history_key:
+            history_data = self._device._data.get(history_key, {})
+            attrs["history"] = history_data.get("value", [])
+        return attrs if attrs else None
+
+    @property
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(
             name=self._device._name,

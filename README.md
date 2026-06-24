@@ -15,6 +15,8 @@ Integration này sử dụng API quốc gia **eAgent** (`gateway.dienluc.vn`) th
 | Thiết lập | Mã KH → Tài khoản → Ngày bắt đầu HĐ | Tài khoản + Mật khẩu + Mã KH (1 bước) |
 | Chọn khu vực | Cần chọn chi nhánh | Tự động phát hiện qua API |
 | Chu kì cập nhật | 6 giờ | 1–24 giờ (mặc định 3 giờ, tùy chỉnh được) |
+| Lịch sử hóa đơn | Không | Có (toàn bộ, kèm QR code thanh toán) |
+| Lịch sử chỉ số | Không | Có (10 ngày gần nhất) |
 
 ### Các tính năng
 
@@ -23,26 +25,50 @@ Integration này sử dụng API quốc gia **eAgent** (`gateway.dienluc.vn`) th
 3. Theo dõi **nhiều mã khách hàng** đồng thời.
 4. **Chu kỳ cập nhật tùy chỉnh** từ 1 đến 24 giờ, thay đổi được sau khi cài đặt mà không cần xóa integration.
 5. Tương thích với tất cả platform HA: **Core**, **Supervisor**, **Hass OS**.
+6. **Lịch sử hóa đơn đầy đủ** theo tháng kèm QR code thanh toán ngân hàng.
+7. **Lịch sử chỉ số 10 ngày** gần nhất để vẽ biểu đồ tiêu thụ.
 
 ### Sensors được tạo
 
+Entity ID có dạng `sensor.{ma_khach_hang}_{key}` (tất cả viết thường).
+
 | Sensor | Ý nghĩa | Đơn vị |
 |---|---|---|
-| `econ_daily_new` | Sản lượng ngày mới nhất (Dynamic Name) | kWh |
-| `econ_daily_old` | Sản lượng ngày trước đó (Dynamic Name) | kWh |
+| `econ_daily_new` | Sản lượng ngày mới nhất | kWh |
+| `econ_daily_old` | Sản lượng ngày trước đó | kWh |
 | `ecost_daily_new` | Tiền điện ngày mới nhất (tham khảo) | VNĐ |
 | `ecost_daily_old` | Tiền điện ngày trước đó (tham khảo) | VNĐ |
-| `econ_monthly` | Sản lượng tháng hiện tại (tạm chốt) | kWh |
+| `econ_monthly` | Sản lượng tháng hiện tại | kWh |
 | `ecost_monthly` | Tiền điện tháng (tham khảo) | VNĐ |
-| `econ_total_new` | Chỉ số công tơ mới nhất | kWh |
-| `econ_total_old` | Chỉ số công tơ đầu kì | kWh |
-| `from_date` | Ngày đầu kì hóa đơn | — |
+| `econ_total_new` | Chỉ số công tơ mới nhất ★ | kWh |
+| `econ_total_old` | Chỉ số công tơ đầu kỳ | kWh |
+| `from_date` | Ngày đầu kỳ hóa đơn | — |
 | `to_date` | Ngày tạm chốt (cập nhật mới nhất) | — |
-| `payment_status` | Tình trạng thanh toán | — |
-| `bill_amount` | Số tiền hóa đơn gần nhất | VNĐ |
+| `payment_status` | Tình trạng thanh toán ★ | — |
+| `bill_amount` | Số tiền hóa đơn gần nhất ★ | VNĐ |
 | `latest_update` | Thời điểm cập nhật dữ liệu lần cuối | — |
 
-> **Lưu ý**: Các sensors tiền điện (`ecost_*`) được tính theo biểu giá bán lẻ sinh hoạt + 8% VAT, chỉ mang tính **tham khảo**.
+> ★ Sensor có **attributes mở rộng** — xem chi tiết bên dưới.
+>
+> Các sensors tiền điện (`ecost_*`) được tính theo biểu giá bán lẻ sinh hoạt + 8% VAT, chỉ mang tính **tham khảo**.
+
+### Attributes mở rộng
+
+Các sensor đánh dấu ★ chứa thêm dữ liệu trong phần **Attributes** (xem tại Developer Tools → States hoặc dùng trong template/automation):
+
+**`payment_status`** — thông tin khách hàng:
+- `customer_name`, `address`, `phone`, `meter` (số công tơ), `station`, `new_code`
+
+**`bill_amount`** — chi tiết hóa đơn gần nhất:
+- `period`, `issue_date`, `from_date`, `to_date`
+- `consumption_kwh`, `amount_before_tax`, `tax`
+- `bill_type`, `order_code`, `bank`
+- `qr_code` — nội dung QR code VietQR để thanh toán qua ngân hàng
+- `history` — danh sách **toàn bộ hóa đơn** các tháng trước (mỗi phần tử có đầy đủ các trường trên kèm `qr_code`)
+
+**`econ_total_new`** — lịch sử chỉ số:
+- `meter_no` — số serial công tơ
+- `history` — danh sách **10 ngày gần nhất**, mỗi phần tử: `{date, index, consumption}`
 
 ## Yêu cầu trước khi cài đặt
 
@@ -119,6 +145,19 @@ Sau khi xác nhận, các sensors sẽ xuất hiện trong phần Devices.
 
 Vào **Settings → Devices & Services → eAgent Điện lực Việt Nam → Configure** để chỉnh lại chu kỳ mà không cần xóa và cài lại integration.
 
+## Biểu đồ (ApexCharts)
+
+Thư mục [`charts/`](charts/) chứa các file YAML mẫu dùng với card [apexcharts-card](https://github.com/RomRider/apexcharts-card) (cài qua HACS → Frontend):
+
+| File | Nội dung |
+|---|---|
+| `charts/bill_by_month.yaml` | Tiền hóa đơn theo tháng (cột) |
+| `charts/consumption_by_month.yaml` | Sản lượng kWh/tháng + chỉ số cuối kỳ (cột + đường) |
+| `charts/daily_10days.yaml` | Sản lượng kWh/ngày + chỉ số tích lũy (10 ngày gần nhất) |
+| `charts/dashboard_evn.yaml` | Dashboard tổng hợp cả 3 biểu đồ + thông tin nhanh |
+
+**Cách dùng**: Thay `CUSTOMER_CODE` trong file bằng mã khách hàng của bạn (viết thường), sau đó dán nội dung vào Lovelace dạng **Manual card**.
+
 ## Home Assistant — Ví dụ Automation
 
 Thay `{ma_khach_hang}` bằng mã khách hàng thực tế của bạn (viết thường).
@@ -145,6 +184,19 @@ action:
         {{ '\n' }}- Sản lượng: {{ states('sensor.{ma_khach_hang}_econ_daily_new') }} kWh
         {{ '\n' }}- Thành tiền: {{ '{0:_.0f}'.format(states('sensor.{ma_khach_hang}_ecost_daily_new')|int).replace('_','.') }} VNĐ
         {{ '\n' }}- Sản lượng tháng: {{ states('sensor.{ma_khach_hang}_econ_monthly') }} kWh
+```
+
+### Ví dụ lấy QR code hóa đơn (trong template)
+
+```yaml
+# Lấy QR code thanh toán của hóa đơn gần nhất
+{{ state_attr('sensor.{ma_khach_hang}_bill_amount', 'qr_code') }}
+
+# Lấy tên khách hàng
+{{ state_attr('sensor.{ma_khach_hang}_payment_status', 'customer_name') }}
+
+# Lấy sản lượng ngày đầu tiên trong lịch sử 10 ngày
+{{ state_attr('sensor.{ma_khach_hang}_econ_total_new', 'history')[0]['consumption'] }} kWh
 ```
 
 ## Giá bán lẻ điện (sinh hoạt, có VAT 8%)

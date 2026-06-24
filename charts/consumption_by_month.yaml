@@ -1,0 +1,80 @@
+# Biểu đồ sản lượng điện tiêu thụ theo tháng (kWh)
+# Nguồn: sensor.CUSTOMER_CODE_bill_amount → attribute "history"
+# Thay CUSTOMER_CODE bằng mã khách hàng thực tế (chữ thường), ví dụ: a3146tl11
+#
+# Hiển thị 2 series: số kWh tiêu thụ (cột) + chỉ số cuối kỳ (đường)
+
+type: custom:apexcharts-card
+header:
+  show: true
+  title: Sản lượng điện theo tháng
+  show_states: false
+apex_config:
+  chart:
+    height: 300
+    toolbar:
+      show: false
+  dataLabels:
+    enabled: false
+  plotOptions:
+    bar:
+      borderRadius: 5
+      columnWidth: 55%
+  xaxis:
+    labels:
+      rotate: -30
+      style:
+        fontSize: 12px
+  yaxis:
+    - seriesName: Tiêu thụ (kWh)
+      title:
+        text: kWh
+      labels:
+        formatter: |
+          EVAL:function(val) { return val + ' kWh'; }
+    - seriesName: Chỉ số cuối kỳ
+      opposite: true
+      title:
+        text: Chỉ số
+      labels:
+        formatter: |
+          EVAL:function(val) { return Math.round(val).toLocaleString('vi-VN'); }
+  tooltip:
+    shared: true
+    intersect: false
+series:
+  - entity: sensor.CUSTOMER_CODE_bill_amount
+    name: Tiêu thụ (kWh)
+    type: column
+    color: '#1e88e5'
+    data_generator: |
+      const bills = entity.attributes.history || [];
+      return bills
+        .slice()
+        .reverse()
+        .map(b => {
+          const [m, y] = b.period.split('/');
+          return {
+            x: String(m).padStart(2, '0') + '/' + y,
+            y: b.consumption_kwh
+          };
+        });
+
+  - entity: sensor.CUSTOMER_CODE_bill_amount
+    name: Chỉ số cuối kỳ
+    type: line
+    color: '#fb8c00'
+    curve: smooth
+    stroke_width: 2
+    data_generator: |
+      const bills = entity.attributes.history || [];
+      return bills
+        .slice()
+        .reverse()
+        .map(b => {
+          const [m, y] = b.period.split('/');
+          return {
+            x: String(m).padStart(2, '0') + '/' + y,
+            y: b.new_index
+          };
+        });

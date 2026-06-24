@@ -1,0 +1,103 @@
+# Biểu đồ sản lượng điện và tiền ước tính 10 ngày gần nhất
+# Nguồn:
+#   - sensor.CUSTOMER_CODE_econ_total_new → attribute "history"  (kWh/ngày + chỉ số tích lũy)
+#   - sensor.CUSTOMER_CODE_ecost_daily_new                        (tiền hôm nay - dùng cho state hiển thị)
+# Thay CUSTOMER_CODE bằng mã khách hàng thực tế (chữ thường), ví dụ: a3146tl11
+#
+# Bậc giá tính tạm theo bậc 1 (1.984đ/kWh) để ước tính — dùng giá trị thực từ sensor ecost_* nếu cần chính xác.
+
+type: custom:apexcharts-card
+header:
+  show: true
+  title: Điện tiêu thụ 10 ngày gần nhất
+  show_states: true
+  colorize_states: true
+apex_config:
+  chart:
+    height: 320
+    toolbar:
+      show: false
+  dataLabels:
+    enabled: true
+    enabledOnSeries:
+      - 0
+    formatter: |
+      EVAL:function(val) {
+        if (!val) return '';
+        return val.toFixed(1) + ' kWh';
+      }
+    offsetY: -22
+    style:
+      fontSize: 10px
+      colors:
+        - '#1e88e5'
+  plotOptions:
+    bar:
+      borderRadius: 4
+      columnWidth: 60%
+      dataLabels:
+        position: top
+  xaxis:
+    labels:
+      rotate: -30
+      style:
+        fontSize: 11px
+  yaxis:
+    - seriesName: Sản lượng (kWh)
+      title:
+        text: kWh/ngày
+      min: 0
+      labels:
+        formatter: |
+          EVAL:function(val) { return val.toFixed(0); }
+    - seriesName: Chỉ số tích lũy
+      opposite: true
+      title:
+        text: Chỉ số (kWh)
+      labels:
+        formatter: |
+          EVAL:function(val) { return val.toFixed(0); }
+  tooltip:
+    shared: true
+    intersect: false
+    y:
+      - formatter: |
+          EVAL:function(val) {
+            if (val == null) return 'Chưa có dữ liệu';
+            const cost = val * 1984 * 1.08;
+            return val.toFixed(2) + ' kWh (~' + Math.round(cost).toLocaleString('vi-VN') + 'đ)';
+          }
+      - formatter: |
+          EVAL:function(val) {
+            return val != null ? val.toFixed(2) + ' kWh' : '';
+          }
+series:
+  - entity: sensor.CUSTOMER_CODE_econ_total_new
+    name: Sản lượng (kWh)
+    type: column
+    color: '#1e88e5'
+    data_generator: |
+      const days = entity.attributes.history || [];
+      return days.map(d => {
+        const [day, month, year] = d.date.split('/');
+        return {
+          x: day + '/' + month,
+          y: d.consumption > 0 ? d.consumption : null
+        };
+      });
+
+  - entity: sensor.CUSTOMER_CODE_econ_total_new
+    name: Chỉ số tích lũy
+    type: line
+    color: '#43a047'
+    curve: smooth
+    stroke_width: 2
+    data_generator: |
+      const days = entity.attributes.history || [];
+      return days.map(d => {
+        const [day, month, year] = d.date.split('/');
+        return {
+          x: day + '/' + month,
+          y: d.index
+        };
+      });
