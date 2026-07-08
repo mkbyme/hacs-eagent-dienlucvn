@@ -297,10 +297,11 @@ def _format_result(
 
     latest = indicators[-1]
     previous = indicators[-2] if len(indicators) > 1 else {}
+    before_previous = indicators[-3] if len(indicators) > 2 else {}
 
     econ_total_new = round(float(latest.get("index", 0)), 2)
-    econ_daily_new = round(float(latest.get("numeIndex", 0)), 2)
-    econ_daily_old = round(float(previous.get("numeIndex", 0)), 2)
+    econ_daily_new = _consumption_for(latest, previous)
+    econ_daily_old = _consumption_for(previous, before_previous)
 
     def _parse_date(s: str):
         try:
@@ -393,9 +394,11 @@ def _format_result(
                 {
                     "date": e.get("readAt", ""),
                     "index": round(float(e.get("index", 0)), 2),
-                    "consumption": round(float(e.get("numeIndex", 0)), 2),
+                    "consumption": _consumption_for(
+                        e, indicators[i - 1] if i > 0 else {}
+                    ),
                 }
-                for e in indicators
+                for i, e in enumerate(indicators)
             ]
         },
         ID_BILL_HISTORY: {
@@ -424,6 +427,21 @@ def _format_bill_attrs(bill: dict | None, include_qr: bool = True) -> dict:
     if include_qr:
         result["qr_code"] = bill.get("qrCodeContent", "")
     return result
+
+
+def _consumption_for(entry: dict, prev: dict) -> float:
+    """Return daily consumption from numeIndex, falling back to the index
+    difference against the previous reading when the API erroneously
+    reports numeIndex as 0."""
+    consumption = round(float(entry.get("numeIndex", 0)), 2)
+    if consumption == 0 and prev:
+        try:
+            consumption = round(
+                float(entry.get("index", 0)) - float(prev.get("index", 0)), 2
+            )
+        except (ValueError, TypeError):
+            pass
+    return consumption
 
 
 def _calc_ecost(kwh: float) -> str:
