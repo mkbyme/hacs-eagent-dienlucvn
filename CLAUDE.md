@@ -19,15 +19,18 @@ There are no automated tests in this repository.
 
 ### Releasing a new version
 
+There is no GitHub Action for releases anymore — `.github/workflows/release.yml` was removed and `hacs.json` no longer sets `zip_release`, so HACS now installs directly from source (no zip asset). Every release must be created manually:
+
 1. Bump `"version"` in `manifest.json`
 2. Commit and push to `main`
-3. Push a tag — the GitHub Action creates the release and attaches `eagent_dienlucvn.zip` automatically:
+3. Tag and push the tag:
    ```bash
    git tag v1.x.x && git push origin v1.x.x
    ```
-   **Do NOT run `gh release create` manually** — the workflow does it. Running it manually causes a permission error when the Action tries to update the already-created release.
-
-HACS uses `zip_release: true` + `filename: eagent_dienlucvn.zip` (set in `hacs.json`). The zip is built from `custom_components/eagent_dienlucvn/` by `.github/workflows/release.yml`.
+4. Create the GitHub release yourself (nothing does this automatically):
+   ```bash
+   gh release create v1.x.x --title "v1.x.x" --notes "..."
+   ```
 
 ## Module Overview
 
