@@ -5,76 +5,51 @@
 # Hiển thị 2 series: số kWh tiêu thụ (cột) + chỉ số cuối kỳ (đường)
 
 type: custom:apexcharts-card
+graph_span: 180d
 header:
   show: true
-  title: Sản lượng điện theo tháng
-  show_states: false
-apex_config:
-  chart:
-    height: 300
-    toolbar:
-      show: false
-  dataLabels:
-    enabled: false
-  plotOptions:
-    bar:
-      borderRadius: 5
-      columnWidth: 55%
-  xaxis:
-    labels:
-      rotate: -30
-      style:
-        fontSize: 12px
-  yaxis:
-    - seriesName: Tiêu thụ (kWh)
-      title:
-        text: kWh
-      labels:
-        formatter: |
-          EVAL:function(val) { return val + ' kWh'; }
-    - seriesName: Chỉ số cuối kỳ
-      opposite: true
-      title:
-        text: Chỉ số
-      labels:
-        formatter: |
-          EVAL:function(val) { return Math.round(val).toLocaleString('vi-VN'); }
-  tooltip:
-    shared: true
-    intersect: false
+  title: Sản lượng điện tiêu thụ theo tháng
+  show_states: true
 series:
   - entity: sensor.CUSTOMER_CODE_bill_amount
-    name: Tiêu thụ (kWh)
+    name: Điện năng tiêu thụ
+    unit: " kWh"
     type: column
-    color: '#1e88e5'
-    data_generator: |
-      const bills = entity.attributes.history || [];
-      return bills
-        .slice()
-        .reverse()
-        .map(b => {
-          const [m, y] = b.period.split('/');
-          return {
-            x: String(m).padStart(2, '0') + '/' + y,
-            y: b.consumption_kwh
-          };
-        });
+    color: var(--primary-color)
+    data_generator: >
+      // 1. Lấy mảng lịch sử cũ và đảo ngược chuỗi thời gian
 
-  - entity: sensor.CUSTOMER_CODE_bill_amount
-    name: Chỉ số cuối kỳ
-    type: line
-    color: '#fb8c00'
-    curve: smooth
-    stroke_width: 2
-    data_generator: |
-      const bills = entity.attributes.history || [];
-      return bills
-        .slice()
-        .reverse()
-        .map(b => {
-          const [m, y] = b.period.split('/');
-          return {
-            x: String(m).padStart(2, '0') + '/' + y,
-            y: b.new_index
-          };
-        });
+      const history = entity.attributes.history || [];
+
+      const sortedHistory = [...history].reverse();
+
+
+      // 2. Chuyển đổi lịch sử cũ thành định dạng cấu trúc của ApexCharts [Thời
+      gian, Giá trị]
+
+      const chartData = sortedHistory.map((item) => {
+        const parts = item.from_date.split('/');
+        const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        return [new Date(formattedDate).getTime(), item.consumption_kwh];
+      });
+
+
+      // 3. Lấy giá trị sản lượng tháng hiện tại từ sensor phụ
+
+      const currentMonthKwh =
+      parseFloat(hass.states['sensor.CUSTOMER_CODE_econ_monthly'].state);
+
+
+      // 4. Nếu sensor có dữ liệu hợp lệ (> 0), nạp thêm vào cuối biểu đồ (thời
+      gian hiện tại)
+
+      if (!isNaN(currentMonthKwh) && currentMonthKwh > 0) {
+        chartData.push([new Date().getTime(), currentMonthKwh]);
+      }
+
+
+      return chartData;
+apex_config:
+  xaxis:
+    labels:
+      format: MM/yyyy

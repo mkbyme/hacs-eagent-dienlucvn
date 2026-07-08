@@ -5,63 +5,51 @@
 # Cài đặt: HACS → Frontend → apexcharts-card
 
 type: custom:apexcharts-card
+graph_span: 180d
 header:
   show: true
-  title: Tiền điện theo tháng
+  title: Hòa đơn theo tháng
   show_states: true
-  colorize_states: true
-chart_type: bar
-apex_config:
-  chart:
-    height: 280
-    toolbar:
-      show: false
-  dataLabels:
-    enabled: true
-    formatter: |
-      EVAL:function(val) {
-        if (!val) return '';
-        return new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(val) + 'đ';
-      }
-    offsetY: -20
-    style:
-      fontSize: 11px
-  plotOptions:
-    bar:
-      borderRadius: 5
-      columnWidth: 60%
-      dataLabels:
-        position: top
-  xaxis:
-    labels:
-      rotate: -30
-      style:
-        fontSize: 12px
-  yaxis:
-    labels:
-      formatter: |
-        EVAL:function(val) {
-          return new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 0 }).format(val) + 'đ';
-        }
-  tooltip:
-    y:
-      formatter: |
-        EVAL:function(val) {
-          return new Intl.NumberFormat('vi-VN').format(val) + ' VNĐ';
-        }
 series:
   - entity: sensor.CUSTOMER_CODE_bill_amount
-    name: Tiền hóa đơn (VNĐ)
-    color: '#e53935'
-    data_generator: |
-      const bills = entity.attributes.history || [];
-      return bills
-        .slice()
-        .reverse()
-        .map(b => {
-          const [m, y] = b.period.split('/');
-          return {
-            x: String(m).padStart(2, '0') + '/' + y,
-            y: b.amount_before_tax + b.tax
-          };
-        });
+    name: Tổng tiền (sau VAT)
+    type: column
+    color: var(--primary-color)
+    data_generator: >
+      // 1. Lấy mảng lịch sử cũ và đảo ngược chuỗi thời gian
+
+      const history = entity.attributes.history || [];
+
+      const sortedHistory = [...history].reverse();
+
+
+      // 2. Chuyển đổi lịch sử cũ thành định dạng cấu trúc của ApexCharts [Thời
+      gian, Giá trị]
+
+      const chartData = sortedHistory.map((item) => {
+        const parts = item.from_date.split('/');
+        const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        const totalAmount = (item.amount_before_tax || 0) + (item.tax || 0);
+        return [new Date(formattedDate).getTime(), totalAmount];
+      });
+
+
+      // 3. Lấy giá trị tiền tháng hiện tại từ sensor phụ (đã là số tiền gồm
+      thuế/tạm tính)
+
+      const currentMonthMoney =
+      parseFloat(hass.states['sensor.CUSTOMER_CODE_ecost_monthly'].state);
+
+
+      // 4. Nạp thêm vào biểu đồ nếu hợp lệ
+
+      if (!isNaN(currentMonthMoney) && currentMonthMoney > 0) {
+        chartData.push([new Date().getTime(), currentMonthMoney]);
+      }
+
+
+      return chartData;
+apex_config:
+  xaxis:
+    labels:
+      format: MM/yyyy

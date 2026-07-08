@@ -152,11 +152,21 @@ Thư mục [`charts/`](charts/) chứa các file YAML mẫu dùng với card [ap
 | File | Nội dung |
 |---|---|
 | `charts/bill_by_month.yaml` | Tiền hóa đơn theo tháng (cột) |
-| `charts/consumption_by_month.yaml` | Sản lượng kWh/tháng + chỉ số cuối kỳ (cột + đường) |
+| `charts/consumption_by_month.yaml` | Sản lượng kWh/tháng (cột) |
 | `charts/daily_10days.yaml` | Sản lượng kWh/ngày + chỉ số tích lũy (10 ngày gần nhất) |
-| `charts/dashboard_evn.yaml` | Dashboard tổng hợp cả 3 biểu đồ + thông tin nhanh |
+| `charts/dashboard_evn.yaml` | Dashboard tổng hợp: thẻ hóa đơn dạng "tờ hóa đơn" + cả 3 biểu đồ trên |
 
 **Cách dùng**: Thay `CUSTOMER_CODE` trong file bằng mã khách hàng của bạn (viết thường), sau đó dán nội dung vào Lovelace dạng **Manual card**.
+
+### Xem trước
+
+| Hóa đơn theo tháng | Sản lượng theo tháng |
+|---|---|
+| ![Hóa đơn theo tháng](charts/bill_by_month.png) | ![Sản lượng theo tháng](charts/consumption_by_month.png) |
+
+| Tiêu thụ & chỉ số 10 ngày | Thẻ tóm tắt hóa đơn (dashboard) |
+|---|---|
+| ![Tiêu thụ 10 ngày](charts/daily_10days.png) | ![Thẻ hóa đơn](charts/dashboard_bill.png) |
 
 ## Home Assistant — Ví dụ Automation
 

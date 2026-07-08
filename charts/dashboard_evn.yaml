@@ -5,228 +5,252 @@
 #   - apexcharts-card (HACS → Frontend)
 #   - mushroom-cards (HACS → Frontend) — cho phần thông tin nhanh (tùy chọn)
 
-type: vertical-stack
+square: false
+type: grid
 cards:
+  - type: markdown
+    title: 🧾 HÓA ĐƠN TIỀN ĐIỆN EVN
+    content: >-
+      <div style="padding: 10px; border: 1px dashed #777; border-radius: 8px;">
+       
+       <div style="text-align: center;">
+         <h3 style="margin: 0;">TỔNG CÔNG TY ĐIỆN LỰC</h3>
+         
+         <div style="font-size: 13px;">Mã điểm đo: 
+                                  <b>{{ state_attr("sensor.CUSTOMER_CODE_payment_status", "meter") }}</b> (Sảnh)</div>
 
-  # ── Thông tin nhanh ─────────────────────────────────────────────────────────
-  - type: entities
-    title: Thông tin tài khoản điện
-    entities:
-      - entity: sensor.CUSTOMER_CODE_payment_status
-        name: Trạng thái thanh toán
-      - entity: sensor.CUSTOMER_CODE_bill_amount
-        name: Tiền hóa đơn gần nhất
-      - entity: sensor.CUSTOMER_CODE_econ_monthly
-        name: Sản lượng tháng này
-      - entity: sensor.CUSTOMER_CODE_ecost_monthly
-        name: Tiền ước tính tháng này
-      - entity: sensor.CUSTOMER_CODE_econ_daily_new
-        name: Sản lượng hôm nay
-      - entity: sensor.CUSTOMER_CODE_latest_update
-        name: Cập nhật lúc
 
-  # ── Biểu đồ 1: Tiền điện theo tháng ────────────────────────────────────────
+       </div>
+      <br/>
+       <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+         
+         <tr>
+           <td colspan="2" style="padding: 4px 0;"><b>Từ ngày:</b> {{ states('sensor.CUSTOMER_CODE_from_date') }}</td>
+           <td colspan="2" style="text-align: right; padding: 4px 0;"><b>Đến ngày:</b> {{ states('sensor.CUSTOMER_CODE_to_date') }}</td>
+         </tr>
+         <tr style="border-bottom: 1px solid #555;">
+           <td colspan="2" style="padding: 4px 0 10px 0;"><b>Trạng thái:</b> 
+             <span style="color: {% if is_state('sensor.CUSTOMER_CODE_payment_status', 'Đã thanh toán') %} #4CAF50 {% else %} #FF9800 {% endif %}; font-weight: bold;">
+               {{ states('sensor.CUSTOMER_CODE_payment_status') }}
+             </span>
+           </td>
+           <td colspan="2" style="text-align: right; padding: 4px 0 10px 0; font-size: 11px;">
+             <i>Cập nhật: {{ as_timestamp(states('sensor.CUSTOMER_CODE_latest_update')) | timestamp_custom('%d/%m/%Y %H:%M') }}</i>
+           </td>
+         </tr>
+
+         <tr style="font-weight: bold; background-color: rgba(255,255,255,0.1);">
+           <th style="text-align: left; padding: 6px;">Hạng mục</th>
+           <th style="text-align: right; padding: 6px; width: 20%;">Cũ</th>
+           <th style="text-align: right; padding: 6px; width: 20%;">Mới</th>
+           <th style="text-align: right; padding: 6px; width: 25%;">Sản lượng</th>
+         </tr>
+
+         <tr style="border-bottom: 1px dashed #555;">
+           <td style="padding: 8px 6px;"><b>Chỉ số tổng</b></td>
+           <td style="text-align: right;">{{ states('sensor.CUSTOMER_CODE_econ_total_old') }}</td>
+           <td style="text-align: right;">{{ states('sensor.CUSTOMER_CODE_econ_total_new') }}</td>
+           <td style="text-align: right; color: #03A9F4; font-weight: bold;">{{ states('sensor.CUSTOMER_CODE_econ_monthly') }}</td>
+         </tr>
+
+         {# --- Đoạn tính toán bóc tách dữ liệu lịch sử từ mảng history --- #}
+         {% set history = state_attr("sensor.CUSTOMER_CODE_econ_total_new", "history") %}
+         {% if history is not none and history | length >= 2 %}
+           {# Hôm qua là phần tử cuối cùng #}
+           {% set today = history[-1] %}
+           {% set today_new = today.index | float(0) %}
+           {% set today_old = today_new - (today.consumption | float(0)) %}
+           
+           {# Hôm kia là phần tử kế cuối #}
+           {% set yesterday = history[-2] %}
+           {% set yesterday_new = yesterday.index | float(0) %}
+           {% set yesterday_old = yesterday_new - (yesterday.consumption | float(0)) %}
+         {% else %}
+           {% set today_old, today_new, yesterday_old, yesterday_new = '-', '-', '-', '-' %}
+         {% endif %}
+
+         <tr style="border-bottom: 1px dashed #555; font-size: 12px;">
+           <td style="padding: 6px 6px 6px 15px;">• Hôm kia</td>
+           <td style="text-align: right;">{{ yesterday_old | round(2) if yesterday_old != '-' else '-' }}</td>
+           <td style="text-align: right;">{{ yesterday_new | round(2) if yesterday_new != '-' else '-' }}</td>
+           <td style="text-align: right;">{{ states('sensor.CUSTOMER_CODE_econ_daily_old') }} kWh</td>
+         </tr>
+         <tr style="border-bottom: 1px solid #555; font-size: 12px;">
+           <td style="padding: 6px 6px 6px 15px;">• Hôm qua</td>
+           <td style="text-align: right;">{{ today_old | round(2) if today_old != '-' else '-' }}</td>
+           <td style="text-align: right;">{{ today_new | round(2) if today_new != '-' else '-' }}</td>
+           <td style="text-align: right;">{{ states('sensor.CUSTOMER_CODE_econ_daily_new') }} kWh</td>
+         </tr>
+
+         <tr>
+           <td colspan="2" style="padding: 10px 6px 4px 6px;">Tiền điện hôm kia:</td>
+           <td colspan="2" style="text-align: right; padding: 10px 6px 4px 6px;">{{ "{:,.0f}".format(states('sensor.CUSTOMER_CODE_ecost_daily_old') | float(0)) }} VNĐ</td>
+         </tr>
+         <tr>
+           <td colspan="2" style="padding: 4px 6px;">Tiền điện hôm qua:</td>
+           <td colspan="2" style="text-align: right; padding: 4px 6px;">{{ "{:,.0f}".format(states('sensor.CUSTOMER_CODE_ecost_daily_new') | float(0)) }} VNĐ</td>
+         </tr>
+         <tr style="border-bottom: 2px solid #f44336;">
+           <td colspan="2" style="padding: 4px 6px 10px 6px;">Tiền tháng này (tạm tính):</td>
+           <td colspan="2" style="text-align: right; padding: 4px 6px 10px 6px; color: #FF9800;">{{ "{:,.0f}".format(states('sensor.CUSTOMER_CODE_ecost_monthly') | float(0)) }} VNĐ</td>
+         </tr>
+         <tr>
+           {%- set bill_label= "HÓA ĐƠN THÁNH NÀY (Cần thanh toán)" %}
+           {%- if is_state('sensor.CUSTOMER_CODE_payment_status', 'Đã thanh toán') %}
+              {%- set bill_label= "HÓA ĐƠN THÁNG TRƯỚC" %}
+           {%- endif %}
+           <td colspan="2" style="padding: 10px 6px; font-size: 15px; font-weight: bold; color: #f44336;">{{ bill_label }}:</td>
+           <td colspan="2" style="text-align: right; padding: 10px 6px; font-size: 16px; font-weight: bold; color: #f44336;">
+             {{ "{:,.0f}".format(states('sensor.CUSTOMER_CODE_bill_amount') | float(0)) }} VNĐ
+           </td>
+         </tr>
+       </table>
+
+      {%- if not is_state('sensor.CUSTOMER_CODE_payment_status', 'Đã thanh toán') %}
+
+      <br/>
+
+      <b>Mã QR Thanh toán: {{
+      "{:,.0f}".format(states('sensor.CUSTOMER_CODE_bill_amount') | float(0)) }}
+      VNĐ</b>
+
+      <br/>
+
+      <img src="{{state_attr('image.qrcode_hoa_don_dien','entity_picture')}}"/>
+
+      {%- endif %}
   - type: custom:apexcharts-card
+    graph_span: 10d
     header:
       show: true
-      title: Tiền điện theo tháng (VNĐ)
+      title: Tiêu thụ điện 10 ngày
       show_states: true
-      colorize_states: true
-    chart_type: bar
-    apex_config:
-      chart:
-        height: 260
-        toolbar:
-          show: false
-      dataLabels:
-        enabled: true
-        formatter: |
-          EVAL:function(val) {
-            if (!val) return '';
-            return new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 }).format(val) + 'đ';
-          }
-        offsetY: -20
-        style:
-          fontSize: 10px
-      plotOptions:
-        bar:
-          borderRadius: 4
-          columnWidth: 60%
-          dataLabels:
-            position: top
-      xaxis:
-        labels:
-          rotate: -30
-          style:
-            fontSize: 11px
-      yaxis:
-        labels:
-          formatter: |
-            EVAL:function(val) {
-              return new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(val) + 'đ';
-            }
-      tooltip:
-        y:
-          formatter: |
-            EVAL:function(val) { return new Intl.NumberFormat('vi-VN').format(val) + ' VNĐ'; }
     series:
-      - entity: sensor.CUSTOMER_CODE_bill_amount
-        name: Tiền hóa đơn
-        color: '#e53935'
-        data_generator: |
-          const bills = entity.attributes.history || [];
-          return bills.slice().reverse().map(b => {
-            const [m, y] = b.period.split('/');
-            return { x: String(m).padStart(2,'0') + '/' + y, y: b.amount_before_tax + b.tax };
-          });
-
-  # ── Biểu đồ 2: Sản lượng kWh theo tháng ────────────────────────────────────
-  - type: custom:apexcharts-card
-    header:
-      show: true
-      title: Sản lượng điện theo tháng (kWh)
-      show_states: false
-    apex_config:
-      chart:
-        height: 260
-        toolbar:
-          show: false
-      dataLabels:
-        enabled: true
-        formatter: |
-          EVAL:function(val) { return val ? val + ' kWh' : ''; }
-        offsetY: -20
-        style:
-          fontSize: 10px
-      plotOptions:
-        bar:
-          borderRadius: 4
-          columnWidth: 55%
-          dataLabels:
-            position: top
-      xaxis:
-        labels:
-          rotate: -30
-          style:
-            fontSize: 11px
-      yaxis:
-        - title:
-            text: kWh
-          labels:
-            formatter: |
-              EVAL:function(val) { return val + ' kWh'; }
-        - opposite: true
-          title:
-            text: Chỉ số
-          labels:
-            formatter: |
-              EVAL:function(val) { return Math.round(val).toLocaleString('vi-VN'); }
-      tooltip:
-        shared: true
-        intersect: false
-    series:
-      - entity: sensor.CUSTOMER_CODE_bill_amount
+      - entity: sensor.CUSTOMER_CODE_econ_total_new
         name: Tiêu thụ (kWh)
         type: column
-        color: '#1e88e5'
+        color: var(--primary-color)
         data_generator: |
-          const bills = entity.attributes.history || [];
-          return bills.slice().reverse().map(b => {
-            const [m, y] = b.period.split('/');
-            return { x: String(m).padStart(2,'0') + '/' + y, y: b.consumption_kwh };
+          const list = entity.attributes.history;
+          return list.map((item) => {
+            // Chuyển đổi định dạng ngày DD/MM/YYYY sang YYYY-MM-DD để Javascript hiểu đúng
+            const parts = item.date.split('/');
+            const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return [new Date(formattedDate).getTime(), item.consumption];
           });
-      - entity: sensor.CUSTOMER_CODE_bill_amount
-        name: Chỉ số cuối kỳ
-        type: line
-        color: '#fb8c00'
-        curve: smooth
-        stroke_width: 2
-        data_generator: |
-          const bills = entity.attributes.history || [];
-          return bills.slice().reverse().map(b => {
-            const [m, y] = b.period.split('/');
-            return { x: String(m).padStart(2,'0') + '/' + y, y: b.new_index };
-          });
-
-  # ── Biểu đồ 3: Sản lượng 10 ngày gần nhất ──────────────────────────────────
   - type: custom:apexcharts-card
+    graph_span: 10d
     header:
       show: true
-      title: Điện tiêu thụ 10 ngày gần nhất
+      title: Chỉ số công tơ điện 10 ngày
       show_states: true
-      colorize_states: true
-    apex_config:
-      chart:
-        height: 280
-        toolbar:
-          show: false
-      dataLabels:
-        enabled: true
-        enabledOnSeries:
-          - 0
-        formatter: |
-          EVAL:function(val) { return val ? val.toFixed(1) : ''; }
-        offsetY: -22
-        style:
-          fontSize: 10px
-          colors:
-            - '#1e88e5'
-      plotOptions:
-        bar:
-          borderRadius: 4
-          columnWidth: 60%
-          dataLabels:
-            position: top
-      xaxis:
-        labels:
-          rotate: -30
-          style:
-            fontSize: 11px
-      yaxis:
-        - title:
-            text: kWh/ngày
-          min: 0
-          labels:
-            formatter: |
-              EVAL:function(val) { return val.toFixed(0); }
-        - opposite: true
-          title:
-            text: Chỉ số (kWh)
-          labels:
-            formatter: |
-              EVAL:function(val) { return val.toFixed(0); }
-      tooltip:
-        shared: true
-        intersect: false
-        y:
-          - formatter: |
-              EVAL:function(val) {
-                if (val == null) return 'Chưa có dữ liệu';
-                const cost = val * 1984 * 1.08;
-                return val.toFixed(2) + ' kWh (~' + Math.round(cost).toLocaleString('vi-VN') + 'đ)';
-              }
-          - formatter: |
-              EVAL:function(val) { return val != null ? val.toFixed(2) + ' kWh' : ''; }
     series:
       - entity: sensor.CUSTOMER_CODE_econ_total_new
-        name: Sản lượng/ngày (kWh)
+        name: Chỉ số (Index)
+        type: area
+        color: var(--primary-color)
+        data_generator: |
+          return entity.attributes.history.map((item) => {
+            const parts = item.date.split('/');
+            const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return [new Date(formattedDate).getTime(), item.index];
+          });
+  - type: custom:apexcharts-card
+    graph_span: 180d
+    header:
+      show: true
+      title: Hòa đơn theo tháng
+      show_states: true
+    series:
+      - entity: sensor.CUSTOMER_CODE_bill_amount
+        name: Tổng tiền (sau VAT)
         type: column
-        color: '#1e88e5'
-        data_generator: |
-          const days = entity.attributes.history || [];
-          return days.map(d => {
-            const [day, month] = d.date.split('/');
-            return { x: day + '/' + month, y: d.consumption > 0 ? d.consumption : null };
+        color: var(--primary-color)
+        data_generator: >
+          // 1. Lấy mảng lịch sử cũ và đảo ngược chuỗi thời gian
+
+          const history = entity.attributes.history || [];
+
+          const sortedHistory = [...history].reverse();
+
+
+          // 2. Chuyển đổi lịch sử cũ thành định dạng cấu trúc của ApexCharts
+          [Thời gian, Giá trị]
+
+          const chartData = sortedHistory.map((item) => {
+            const parts = item.from_date.split('/');
+            const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            const totalAmount = (item.amount_before_tax || 0) + (item.tax || 0);
+            return [new Date(formattedDate).getTime(), totalAmount];
           });
-      - entity: sensor.CUSTOMER_CODE_econ_total_new
-        name: Chỉ số tích lũy
-        type: line
-        color: '#43a047'
-        curve: smooth
-        stroke_width: 2
-        data_generator: |
-          const days = entity.attributes.history || [];
-          return days.map(d => {
-            const [day, month] = d.date.split('/');
-            return { x: day + '/' + month, y: d.index };
+
+
+          // 3. Lấy giá trị tiền tháng hiện tại từ sensor phụ (đã là số tiền gồm
+          thuế/tạm tính)
+
+          const currentMonthMoney =
+          parseFloat(hass.states['sensor.CUSTOMER_CODE_ecost_monthly'].state);
+
+
+          // 4. Nạp thêm vào biểu đồ nếu hợp lệ
+
+          if (!isNaN(currentMonthMoney) && currentMonthMoney > 0) {
+            chartData.push([new Date().getTime(), currentMonthMoney]);
+          }
+
+
+          return chartData;
+    apex_config:
+      xaxis:
+        labels:
+          format: MM/yyyy
+  - type: custom:apexcharts-card
+    graph_span: 180d
+    header:
+      show: true
+      title: Sản lượng điện tiêu thụ theo tháng
+      show_states: true
+    series:
+      - entity: sensor.CUSTOMER_CODE_bill_amount
+        name: Điện năng tiêu thụ
+        unit: " kWh"
+        type: column
+        color: var(--primary-color)
+        data_generator: >
+          // 1. Lấy mảng lịch sử cũ và đảo ngược chuỗi thời gian
+
+          const history = entity.attributes.history || [];
+
+          const sortedHistory = [...history].reverse();
+
+
+          // 2. Chuyển đổi lịch sử cũ thành định dạng cấu trúc của ApexCharts
+          [Thời gian, Giá trị]
+
+          const chartData = sortedHistory.map((item) => {
+            const parts = item.from_date.split('/');
+            const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return [new Date(formattedDate).getTime(), item.consumption_kwh];
           });
+
+
+          // 3. Lấy giá trị sản lượng tháng hiện tại từ sensor phụ
+
+          const currentMonthKwh =
+          parseFloat(hass.states['sensor.CUSTOMER_CODE_econ_monthly'].state);
+
+
+          // 4. Nếu sensor có dữ liệu hợp lệ (> 0), nạp thêm vào cuối biểu đồ
+          (thời gian hiện tại)
+
+          if (!isNaN(currentMonthKwh) && currentMonthKwh > 0) {
+            chartData.push([new Date().getTime(), currentMonthKwh]);
+          }
+
+
+          return chartData;
+    apex_config:
+      xaxis:
+        labels:
+          format: MM/yyyy
+columns: 1
