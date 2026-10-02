@@ -27,6 +27,7 @@ Integration này sử dụng API quốc gia **eAgent** (`gateway.dienluc.vn`) th
 5. Tương thích với tất cả platform HA: **Core**, **Supervisor**, **Hass OS**.
 6. **Lịch sử hóa đơn đầy đủ** theo tháng kèm QR code thanh toán ngân hàng.
 7. **Lịch sử chỉ số 10 ngày** gần nhất để vẽ biểu đồ tiêu thụ.
+8. **Nút làm mới dữ liệu** để lấy dữ liệu mới ngay khi cần (ví dụ sau khi thanh toán hóa đơn).
 
 ### Sensors được tạo
 
@@ -51,6 +52,10 @@ Entity ID có dạng `sensor.{ma_khach_hang}_{key}` (tất cả viết thường
 > ★ Sensor có **attributes mở rộng** — xem chi tiết bên dưới.
 >
 > Các sensors tiền điện (`ecost_*`) được tính theo biểu giá bán lẻ sinh hoạt + 8% VAT, chỉ mang tính **tham khảo**.
+
+### Nút làm mới dữ liệu
+
+Ngoài các sensor, integration tạo thêm một entity nút nhấn `button.{ma_khach_hang}_refresh` (tên **"Làm mới dữ liệu"**). Nhấn nút để lấy dữ liệu mới nhất từ eAgent ngay lập tức thay vì chờ chu kỳ cập nhật tiếp theo — hữu ích sau khi thanh toán hóa đơn để `payment_status` và `bill_amount` được cập nhật kịp thời. Có thể dùng nút này trong dashboard hoặc gọi qua automation bằng service `button.press`.
 
 ### Attributes mở rộng
 
@@ -115,6 +120,7 @@ Hoặc thêm thủ công:
         └── eagent_dienlucvn
             └── __init__.py
             └── sensor.py
+            └── button.py
             └── eagent_dienlucvn.py
             └── config_flow.py
             └── const.py
