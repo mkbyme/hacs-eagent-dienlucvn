@@ -36,7 +36,8 @@ There is no GitHub Action for releases anymore — `.github/workflows/release.ym
 
 | File | Purpose |
 |------|---------|
-| `__init__.py` | Entry point: `async_setup_entry` / `async_unload_entry` / `async_reload_entry`; stores device in `hass.data[DOMAIN][entry_id]` |
+| `__init__.py` | Entry point: creates `EVNDevice` (stored in `hass.data[DOMAIN][entry_id]["device"]`), forwards `sensor` + `button` platforms |
+| `button.py` | `EVNRefreshButton`: manual refresh button (calls `coordinator.async_request_refresh`) |
 | `sensor.py` | `EVNDevice` (coordinator wrapper) + `EVNSensor` (CoordinatorEntity, 13 per device) |
 | `eagent_dienlucvn.py` | `EAgentAPI`: all HTTP calls, token lifecycle, data formatting (`_format_result`, `_calc_ecost`) |
 | `config_flow.py` | `ConfigFlow` (login + merchant_code resolution) + `OptionsFlowHandler` (scan_interval only) |

@@ -42,12 +42,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
     """Setup the sensor platform."""
-    entry_config = hass.data[DOMAIN][entry.entry_id]
-
-    api = eagent_dienlucvn.EAgentAPI(hass, True)
-    device = EVNDevice(entry_config, api)
-
-    await device.async_create_coordinator(hass)
+    device: EVNDevice = hass.data[DOMAIN][entry.entry_id]["device"]
 
     async_add_entities(
         [EVNSensor(device, description, hass) for description in EVN_SENSORS]
