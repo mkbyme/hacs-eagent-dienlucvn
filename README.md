@@ -28,6 +28,7 @@ Integration này sử dụng API quốc gia **eAgent** (`gateway.dienluc.vn`) th
 6. **Lịch sử hóa đơn đầy đủ** theo tháng kèm QR code thanh toán ngân hàng.
 7. **Lịch sử chỉ số 10 ngày** gần nhất để vẽ biểu đồ tiêu thụ.
 8. **Nút làm mới dữ liệu** để lấy dữ liệu mới ngay khi cần (ví dụ sau khi thanh toán hóa đơn).
+9. **Giữ nguyên trạng thái cũ khi lỗi** — sensor chỉ được cập nhật khi lấy dữ liệu thành công; sensor `connection_status` cho biết lần cập nhật cuối thành công (`online`) hay thất bại (`offline`).
 
 ### Sensors được tạo
 
@@ -47,7 +48,8 @@ Entity ID có dạng `sensor.{ma_khach_hang}_{key}` (tất cả viết thường
 | `to_date` | Ngày tạm chốt (cập nhật mới nhất) | — |
 | `payment_status` | Tình trạng thanh toán ★ | — |
 | `bill_amount` | Số tiền hóa đơn gần nhất ★ | VNĐ |
-| `latest_update` | Thời điểm cập nhật dữ liệu lần cuối | — |
+| `latest_update` | Thời điểm thử cập nhật lần cuối (cả khi thành công lẫn thất bại) | — |
+| `connection_status` | Kết quả lần cập nhật cuối: `online` / `offline` (attributes `last_status`, `last_success`) | — |
 
 > ★ Sensor có **attributes mở rộng** — xem chi tiết bên dưới.
 >

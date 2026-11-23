@@ -50,11 +50,14 @@ ID_TO_DATE = "to_date"
 ID_PAYMENT_STATUS = "payment_status"
 ID_BILL_AMOUNT = "bill_amount"
 ID_LATEST_UPDATE = "latest_update"
+ID_CONNECTION_STATUS = "connection_status"
 ID_INDICATORS_HISTORY = "indicators_history"
 ID_BILL_HISTORY = "bill_history"
 
 STATUS_PAID = "Đã thanh toán"
 STATUS_UNPAID = "Chưa thanh toán"
+STATUS_ONLINE = "online"
+STATUS_OFFLINE = "offline"
 
 VIETNAM_ECOST_VAT = 8  # in %
 VIETNAM_ECOST_STAGES = {

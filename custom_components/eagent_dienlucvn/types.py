@@ -11,6 +11,7 @@ from homeassistant.const import UnitOfEnergy
 from .const import (
     ID_BILL_AMOUNT,
     ID_BILL_HISTORY,
+    ID_CONNECTION_STATUS,
     ID_ECON_DAILY_NEW,
     ID_ECON_DAILY_OLD,
     ID_ECON_MONTHLY,
@@ -37,6 +38,7 @@ class EVNSensorEntityDescription(SensorEntityDescription, EVNRequiredKeysMixin):
     dynamic_name: None | bool = False
     dynamic_icon: None | bool = False
     history_key: str | None = None
+    always_available: bool = False
 
 
 EVN_SENSORS: tuple[EVNSensorEntityDescription, ...] = (
@@ -147,5 +149,16 @@ EVN_SENSORS: tuple[EVNSensorEntityDescription, ...] = (
         icon="mdi:calendar-check",
         device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda data: data[ID_LATEST_UPDATE],
+        always_available=True,
+    ),
+    EVNSensorEntityDescription(
+        key=ID_CONNECTION_STATUS,
+        name="Trạng thái kết nối",
+        icon="mdi:cloud-question",
+        device_class=SensorDeviceClass.ENUM,
+        options=["online", "offline"],
+        value_fn=lambda data: data[ID_CONNECTION_STATUS],
+        dynamic_icon=True,
+        always_available=True,
     ),
 )

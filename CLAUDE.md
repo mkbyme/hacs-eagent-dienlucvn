@@ -38,11 +38,11 @@ There is no GitHub Action for releases anymore — `.github/workflows/release.ym
 |------|---------|
 | `__init__.py` | Entry point: creates `EVNDevice` (stored in `hass.data[DOMAIN][entry_id]["device"]`), forwards `sensor` + `button` platforms |
 | `button.py` | `EVNRefreshButton`: manual refresh button (calls `coordinator.async_request_refresh`) |
-| `sensor.py` | `EVNDevice` (coordinator wrapper) + `EVNSensor` (CoordinatorEntity, 13 per device) |
+| `sensor.py` | `EVNDevice` (coordinator wrapper) + `EVNSensor` (CoordinatorEntity, 14 per device) |
 | `eagent_dienlucvn.py` | `EAgentAPI`: all HTTP calls, token lifecycle, data formatting (`_format_result`, `_calc_ecost`) |
 | `config_flow.py` | `ConfigFlow` (login + merchant_code resolution) + `OptionsFlowHandler` (scan_interval only) |
 | `const.py` | API URLs, sensor ID constants, config keys, `VIETNAM_ECOST_STAGES` pricing table |
-| `types.py` | `EVNSensorEntityDescription` dataclass + `EVN_SENSORS` tuple (all 13 sensor definitions) |
+| `types.py` | `EVNSensorEntityDescription` dataclass + `EVN_SENSORS` tuple (all 14 sensor definitions) |
 | `strings.json` / `translations/` | HA UI strings; `vi.json` and `en.json` |
 
 ## API Endpoints
@@ -88,8 +88,9 @@ Custom fields beyond HA's `SensorEntityDescription`:
 | `dynamic_name` | `bool` | Appends `data[id]["info"]` to the entity name (e.g., "hôm nay", "hôm qua") |
 | `dynamic_icon` | `bool` | Picks icon from `data[id]["info"]` at runtime (e.g., alert vs check-circle for payment status) |
 | `history_key` | `str \| None` | If set, appends `data[history_key]` as `"history"` in `extra_state_attributes` |
+| `always_available` | `bool` | Stays available even before the first successful fetch (`latest_update`, `connection_status`) |
 
-### Sensors created per device (13 total)
+### Sensors created per device (14 total)
 
 | Sensor key | Unit | Notes |
 |------------|------|-------|
@@ -105,7 +106,8 @@ Custom fields beyond HA's `SensorEntityDescription`:
 | `to_date` | — | Latest reading date |
 | `payment_status` | — | "Đã thanh toán" / "Chưa thanh toán"; dynamic icon |
 | `bill_amount` | VNĐ | Most recent bill; dynamic icon; has full bill history |
-| `latest_update` | — | Data refresh timestamp |
+| `latest_update` | — | Timestamp of last update attempt (success or failure); always available |
+| `connection_status` | — | `online`/`offline` from last update attempt; dynamic icon; attrs `last_status`, `last_success`; always available |
 
 ### Key design decisions
 
@@ -115,7 +117,8 @@ Custom fields beyond HA's `SensorEntityDescription`:
 - `econ_monthly` = `indicators[-1].index` − `econ_total_old`.
 - `_format_bill_attrs(bill)` extracts the same fields from both `last_bill` (single bill) and `bill_list` entries (history), keeping QR code and payment info intact.
 - Tiered pricing (`VIETNAM_ECOST_STAGES` in `const.py`) + 8 % VAT applies to all `ecost_*` sensors.
-- All 13 sensors share `available` state: False if the last coordinator update failed or returned no data.
+- `EVNDevice._data` is only replaced on a successful fetch; on failure the previous data is kept so sensors retain their last state. Only `latest_update` and `connection_status` are rewritten on every attempt.
+- Sensors are unavailable only until the first successful fetch (or when their value is `None`); `always_available=True` on a description bypasses the success check.
 
 ### Sensor → notable attributes
 
